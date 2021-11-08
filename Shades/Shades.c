@@ -105,6 +105,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   init();
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -147,6 +148,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+            drawField(hdc);
             EndPaint(hWnd, &ps);
         }
         break;
