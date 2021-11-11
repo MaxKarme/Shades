@@ -126,6 +126,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_CREATE:
+        SetTimer(hWnd, 1, 55, NULL);
+        break;
+    case WM_TIMER:
+        moveCurrent();
+        InvalidateRect(hWnd, NULL, TRUE);
+        break;
+    case WM_KEYDOWN:
+        switch (wParam) 
+        {
+        case VK_LEFT:
+            changeColl(-1, hWnd);
+            break;
+        case VK_RIGHT:
+            changeColl(1, hWnd);
+            break;
+        }
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
