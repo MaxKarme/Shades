@@ -1,7 +1,7 @@
 #include "game.h"
-//#define _CRT_SECURE_NO_WARNINGS;
 #include <stdio.h>
-
+#include <conio.h>
+#include <time.h>
 
 COLORREF themes[1][6] = {
 	{RGB(120, 120, 120), RGB(255, 255, 255), RGB(250, 220, 120), RGB(250, 120, 0), RGB(200, 60, 0), RGB(110, 12, 2)}
@@ -20,6 +20,8 @@ struct Game game;
 int** map;
 
 void init() {
+	srand(time(NULL));
+
 	game.rows = 10;
 	game.colls = 4;
 	game.sizeX = 50;
@@ -28,7 +30,7 @@ void init() {
 
 	game.current.coll = 0;
 	game.current.y = 0;
-	game.current.type = 2;
+	game.current.type = rand() % 4 + 1;
 	game.current.speed = 4;
 	game.current.currentLineTop = 0;
 
@@ -49,6 +51,56 @@ int printMap() {
 	}
 
 	fclose(file);
+}
+
+void mergeColl(int index) {
+	int row = 0;
+	while (map[row][index] == 0) row++;
+
+	row++;
+	if (row >= game.rows) return;
+
+	while (map[row][index] == map[row - 1][index]) {
+		if (map[row][index] == 5) return;
+		map[row - 1][index] = 0;
+		map[row][index] += 1;
+		row++;
+		if (row >= game.rows) return;
+	};
+}
+
+void checkLines() {
+	int check = 1;
+	int deletedLine = 0;
+
+	for (int i = 0; i < game.rows; ++i) {
+		int currentType = map[i][0];
+		if (currentType == 0) continue;
+
+		check = 1;
+
+		for (int j = 1; j < game.colls; ++j) {
+			if (map[i][j] != currentType) {
+				check = 0;
+				break;
+			}
+		}
+
+		if (check) {
+			deletedLine = i;
+			break;
+		}
+	}
+
+	if (!check) return;
+
+	for (int i = deletedLine; i > 0; --i) {
+		for (int j = 0; j < game.colls; ++j) {
+			map[i][j] = map[i - 1][j];
+		}
+	}
+
+	for (int i = 0; i < game.colls; ++i) map[0][i] = 0;
 }
 
 int getCollTop(int index) {
@@ -83,9 +135,15 @@ void moveCurrent() {
 	int topCoords = game.rows * game.sizeY - game.current.currentLineTop * game.sizeY;
 	if (game.current.y >= topCoords - game.sizeY) {
 		addCurrentInMap();
+		mergeColl(game.current.coll);
+		checkLines();
+
 		game.current.coll = 0;
 		game.current.y = 0;
+
 		game.current.currentLineTop = getCollTop(0);
+		game.current.type = rand() % 4 + 1;
+
 		return;
 	}
 	game.current.y += game.current.speed;
