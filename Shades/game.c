@@ -25,11 +25,15 @@ struct ColorAnimation {
 };
 
 struct BlockAnimation {
+	int width, height;
 	int x, y;
 	int id, nextId;
 	int isVisible;
+	int deletedLine;
+	int checkEmptyColl;
 	struct ColorAnimation a;
 };
+
 
 struct BlockAnimation animations[10];
 
@@ -82,6 +86,59 @@ int getId() {
 	return id++;
 }
 
+void increaseSpeed() {
+	if (game.current.speed > 8) return;
+	game.current.speed *= 2;
+}
+
+void mergeColl(int coll, int row);
+void checkLines();
+
+int deleteLine(int deletedLine) {
+	for (int i = deletedLine; i > 0; --i) {
+		for (int j = 0; j < game.colls; ++j) {
+			map[i][j] = map[i - 1][j];
+		}
+	}
+
+	for (int i = 0; i < game.colls; ++i) map[0][i] = 0;
+
+	game.current.currentLineTop--;
+
+	for (int i = 0; i < game.colls; ++i) mergeColl(i, deletedLine);
+	checkLines();
+}
+
+void deleteEmpty(int coll, int row, int height) {
+	for (int i = row; i - height >= 0; --i) {
+		map[i][coll] = map[i - height][coll];
+	}
+
+	for (int i = 0; i < height; ++i) {
+		map[i][coll] = 0;
+	}
+
+	mergeColl(coll, row);
+	checkLines();
+}
+
+void checkEmptyInColl(int coll) {
+	int wasElem = 0;
+	int emptyIndex = -1;
+	int emptyHeight = 0;
+
+	for (int i = 0; i < game.rows; ++i) {
+		if (map[i][coll] != 0) wasElem = 1;
+		if (!wasElem || map[i][coll] != 0) continue;
+
+		emptyIndex = i;
+		emptyHeight++;
+	}
+	if (emptyIndex == -1) return;
+
+	deleteEmpty(coll, emptyIndex, emptyHeight);
+}
+
 void BlockAnimationsTick() {
 	for (int i = 0; i < game.animationsCount; ++i) {
 		if (!animations[i].a.isActive) continue;
@@ -94,6 +151,8 @@ void BlockAnimationsTick() {
 		if (animations[i].a.steps) continue;
 
 		int nextId = animations[i].nextId;
+		if (animations[i].deletedLine != -1) deleteLine(animations[i].deletedLine);
+		if (animations[i].checkEmptyColl != -1) checkEmptyInColl(animations[i].checkEmptyColl);
 
 		for (int j = i + 1; j < game.animationsCount; ++j) {
 			if (animations[j].id == nextId) {
@@ -123,22 +182,23 @@ struct BlockColor getDelta(struct BlockColor from, struct BlockColor to, int ste
 	return res;
 }
 
-void mergeColl(int index) {
-	int row = 0;
-	while (map[row][index] == 0) row++;
-
+void mergeColl(int coll, int row) {
 	row++;
 	if (row >= game.rows) return;
-
 	int isFirstAnimation = 1;
 
-	while (map[row][index] == map[row - 1][index]) {
-		if (map[row][index] == 5) return;
+	while (map[row][coll] == map[row - 1][coll]) {
+		if (map[row][coll] == 5) return;
 
 		int id = getId();
-		struct BlockColor currentColor = themes[game.currentTheme][map[row][index]];
+		struct BlockColor currentColor = themes[game.currentTheme][map[row][coll]];
 
-		struct BlockAnimation disappearA = {index * game.sizeX, (row - 1) * game.sizeY, id, 0, isFirstAnimation}; // x, y, id, nextId, isVisible
+		struct BlockAnimation disappearA = {
+												game.sizeX, game.sizeY,						// width, heigth
+												coll * game.sizeX, (row - 1) * game.sizeY,	// x, y
+												id, 0, isFirstAnimation, -1, -1				// id nextId, isVisible, deletedLine, checkEmptyColl
+											};
+
 		struct ColorAnimation disappearColor = { currentColor, getDelta(currentColor, themes[game.currentTheme][0], 6), 6, isFirstAnimation}; // currentColor deltaColor steps isActive
 
 		disappearA.a = disappearColor;
@@ -151,14 +211,18 @@ void mergeColl(int index) {
 		animations[game.animationsCount - 1] = disappearA;
 
 		id = getId();
-		struct BlockColor endColor = themes[game.currentTheme][map[row][index] + 1];
+		struct BlockColor endColor = themes[game.currentTheme][map[row][coll] + 1];
 
-		struct BlockAnimation increaseA = { index * game.sizeX, row * game.sizeY, id, 0, 1 }; // x, y, id, nextId, isVisible
+		struct BlockAnimation increaseA = {
+											game.sizeX, game.sizeY,					// width, heigth
+											coll * game.sizeX, row * game.sizeY,	// x, y
+											id, 0, 1, -1, -1						// id nextId, isVisible, deletedLine, checkEmptyColl
+										};
+
 		struct ColorAnimation increaseColor = { currentColor, getDelta(currentColor, endColor, 6), 6, isFirstAnimation }; // currentColor deltaColor steps isActive
 
 		increaseA.a = increaseColor;
 
-		isFirstAnimation = 0;
 
 		if (!isFirstAnimation) {
 			animations[game.animationsCount - 2].nextId = id;
@@ -167,12 +231,18 @@ void mergeColl(int index) {
 		game.animationsCount++;
 		animations[game.animationsCount - 1] = increaseA;
 
-		map[row - 1][index] = 0;
-		map[row][index] += 1;
+		map[row - 1][coll] = 0;
+		map[row][coll] += 1;
 
 		row++;
-		if (row >= game.rows) return;
+		isFirstAnimation = 0;
+
+		if (row >= game.rows) break;
 	};
+
+	if (isFirstAnimation) return; // нет слияний
+
+	animations[game.animationsCount - 1].checkEmptyColl = coll;
 }
 
 void checkLines() {
@@ -181,7 +251,10 @@ void checkLines() {
 
 	for (int i = 0; i < game.rows; ++i) {
 		int currentType = map[i][0];
-		if (currentType == 0) continue;
+		if (currentType == 0) {
+			check = 0;
+			continue;
+		}
 
 		check = 1;
 
@@ -200,13 +273,22 @@ void checkLines() {
 
 	if (!check) return;
 
-	for (int i = deletedLine; i > 0; --i) {
-		for (int j = 0; j < game.colls; ++j) {
-			map[i][j] = map[i - 1][j];
-		}
-	}
+	int id = getId();
 
-	for (int i = 0; i < game.colls; ++i) map[0][i] = 0;
+	struct BlockAnimation disappearLine = {
+										game.sizeX * game.colls, game.sizeY,			// width, heigth
+										0, deletedLine * game.sizeY,					// x, y
+										id, 0, !game.animationsCount, deletedLine, -1	// id nextId, isVisible, deletedLine, checkEmptyColl
+	};
+
+	struct BlockColor currentColor = themes[game.currentTheme][map[deletedLine][0]];
+	struct ColorAnimation disappearColor = { currentColor, getDelta(currentColor, themes[game.currentTheme][0], 6), 6, !game.animationsCount }; // currentColor deltaColor steps isActive
+
+	disappearLine.a = disappearColor;
+	if(game.animationsCount) animations[game.animationsCount - 1].nextId = id;
+
+	game.animationsCount++;
+	animations[game.animationsCount - 1] = disappearLine;
 }
 
 int getCollTop(int index) {
@@ -222,6 +304,10 @@ int getCollTop(int index) {
 void changeColl(int vector, HWND hWnd) {
 	int newColl = game.current.coll + vector;
 	if (newColl < 0 || newColl >= game.colls) return;
+
+	int topCoords = game.rows * game.sizeY - getCollTop(newColl) * game.sizeY;
+	if (game.current.y >= topCoords - game.sizeY) return;
+	
 	game.current.coll = newColl;
 	game.current.currentLineTop = getCollTop(game.current.coll);
 }
@@ -239,9 +325,10 @@ void addCurrentInMap() {
 
 void moveCurrent() {
 	int topCoords = game.rows * game.sizeY - game.current.currentLineTop * game.sizeY;
+	//if (game.animationsCount) return;
 	if (game.current.y + game.current.speed >= topCoords - game.sizeY) {
 		addCurrentInMap();
-		mergeColl(game.current.coll);
+		mergeColl(game.current.coll, game.rows - game.current.currentLineTop - 1);
 		checkLines();
 
 		game.current.coll = 0;
@@ -249,6 +336,7 @@ void moveCurrent() {
 
 		game.current.currentLineTop = getCollTop(0);
 		game.current.type = rand() % 4 + 1;
+		game.current.speed = 8;
 
 		return;
 	}
@@ -288,7 +376,7 @@ void drawField(HDC hdc) {
 		hBrush = CreateSolidBrush(RGB(animations[i].a.current.r, animations[i].a.current.g, animations[i].a.current.b));
 		SelectObject(hdc, hBrush);
 
-		RECT BlockCoords = { animations[i].x, animations[i].y, animations[i].x + game.sizeX, animations[i].y + game.sizeY };
+		RECT BlockCoords = { animations[i].x, animations[i].y, animations[i].x + animations[i].width, animations[i].y + animations[i].height };
 		FillRect(hdc, &BlockCoords, hBrush);
 
 		DeleteObject(hBrush);

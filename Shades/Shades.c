@@ -143,6 +143,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case VK_RIGHT:
             changeColl(1, hWnd);
             break;
+        case VK_DOWN:
+            increaseSpeed();
+            break;
         }
     case WM_COMMAND:
         {
