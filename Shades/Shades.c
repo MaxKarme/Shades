@@ -3,6 +3,8 @@
 
 #include "framework.h"
 #include "Shades.h"
+#include "field.h"
+#include "Menu.h"
 
 #define MAX_LOADSTRING 100
 
@@ -105,7 +107,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   init();
+   initMenu(0, 0, 280, 450);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -126,25 +128,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_MOUSEMOVE:
+        if(MenuOnMouseMove(LOWORD(lParam), HIWORD(lParam))) InvalidateRect(hWnd, NULL, TRUE);
+        break;
+    case WM_LBUTTONDOWN:
+        if(MenuOnMouseDown(LOWORD(lParam), HIWORD(lParam))) InvalidateRect(hWnd, NULL, TRUE);
+        break;
+    case WM_LBUTTONUP:
+        if (MenuOnMouseUp()) InvalidateRect(hWnd, NULL, TRUE);
+        break;
     case WM_CREATE:
         SetTimer(hWnd, 1, 55, NULL);
         break;
     case WM_TIMER:
-        moveCurrent();
+        if(getMenuState() == 0) moveCurrent();
         BlockAnimationsTick();
-        InvalidateRect(hWnd, NULL, TRUE);
+        if(getMenuState() == 0) InvalidateRect(hWnd, NULL, TRUE);
         break;
     case WM_KEYDOWN:
         switch (wParam) 
         {
         case VK_LEFT:
-            changeColl(-1, hWnd);
+            if(getMenuState() == 0) changeColl(-1, hWnd);
             break;
         case VK_RIGHT:
-            changeColl(1, hWnd);
+            if(getMenuState() == 0) changeColl(1, hWnd);
             break;
         case VK_DOWN:
-            increaseSpeed();
+            if(getMenuState() == 0) increaseSpeed();
             break;
         }
     case WM_COMMAND:
@@ -170,6 +181,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
             drawField(hdc);
+            drawMenu(hdc);
+
             EndPaint(hWnd, &ps);
         }
         break;
