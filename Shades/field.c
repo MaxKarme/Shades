@@ -16,10 +16,6 @@ struct Field {
 	int points;
 };
 
-struct BlockColor {
-	double r, g, b;
-};
-
 struct ColorAnimation {
 	struct BlockColor current, delta;
 	int steps;
@@ -39,13 +35,18 @@ struct BlockAnimation {
 
 struct BlockAnimation animations[10];
 
-struct BlockColor themes[2][6] = {
+struct BlockColor themes[3][6] = {
 	{{100, 100, 100}, {252, 254, 217}, {249, 241, 133}, {255, 146, 3}, {197, 66, 1}, {114, 11, 2}},
-	{{150, 150, 150}, {255, 255, 255}, {255, 0, 0}, {255, 255, 0}, {0, 255, 0}, {0, 0, 255}}
+	{{150, 150, 150}, {255, 255, 255}, {140, 204, 239}, {29, 140, 212}, {32, 86, 194}, {9, 17, 38}},
+	{{150, 150, 150}, {255, 255, 255}, {196, 174, 212}, {163, 84, 150}, {117, 15, 99}, {66, 0, 90}}
 };
 
 struct Field field;
 int** map;
+
+struct BlockColor getColorFromThemes(int i, int j) {
+	return themes[i][j];
+}
 
 void initField(int x, int y, int width, int height) {
 	srand(time(NULL));
@@ -57,10 +58,10 @@ void initField(int x, int y, int width, int height) {
 	field.y = y;
 
 	field.rows = 10;
-	field.colls = 4;
+	field.colls = getCollsCount();
 	field.sizeX = width / field.colls;
 	field.sizeY = height / field.rows;
-	field.currentTheme = 0;
+	field.currentTheme = getTheme();
 
 	field.current.coll = 0;
 	field.current.y = 0;
@@ -77,6 +78,8 @@ void initField(int x, int y, int width, int height) {
 }
 
 int getPoints() { return field.points; };
+
+
 
 int printMap() {
 	FILE* file = fopen("log.txt", "wt");
@@ -248,6 +251,8 @@ void mergeColl(int coll, int row) {
 		if (row >= field.rows) break;
 	};
 
+	field.current.currentLineTop = getCollTop(field.current.coll);
+
 	if (isFirstAnimation) return; // нет слияний
 
 	animations[field.animationsCount - 1].checkEmptyColl = coll;
@@ -334,7 +339,7 @@ void addCurrentInMap() {
 
 void moveCurrent() {
 	int topCoords = field.rows * field.sizeY - field.current.currentLineTop * field.sizeY;
-	//if (field.animationsCount) return;
+	if (field.animationsCount) return;
 	if (field.current.y + field.current.speed >= topCoords - field.sizeY) {
 		addCurrentInMap();
 		mergeColl(field.current.coll, field.rows - field.current.currentLineTop - 1);
@@ -382,7 +387,7 @@ void drawField(HDC hdc) {
 					field.current.coll * field.sizeX + field.sizeX, field.current.y + field.sizeY + field.y
 				};
 
-	FillRect(hdc, &coords, hBrush);
+	if(!field.animationsCount) FillRect(hdc, &coords, hBrush);
 	DeleteObject(hBrush);
 
 	for (int i = 0; i < field.animationsCount; ++i) {
@@ -400,4 +405,8 @@ void drawField(HDC hdc) {
 
 		DeleteObject(hBrush);
 	}
+}
+
+void changeFieldTheme(int newTheme) {
+	field.currentTheme = newTheme;
 }

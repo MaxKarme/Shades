@@ -30,18 +30,66 @@ void drawButton(HDC hdc, struct Button btn) {
 	DeleteObject(mouseDownBrush);
 }
 
-void pauseBtnClick() {
+void drawBorder(HDC hdc, struct Button btn, COLORREF color) {
+	int lineW = 4;
+
+	HPEN hPen = CreatePen(PS_SOLID, lineW, color);
+	SelectObject(hdc, hPen);
+
+	MoveToEx(hdc, btn.x - lineW / 2, btn.y - lineW / 2, NULL);
+	LineTo(hdc, btn.x + btn.width + lineW / 2, btn.y - lineW / 2);
+	LineTo(hdc, btn.x + btn.width + lineW / 2, btn.y + btn.height + lineW / 2);
+	LineTo(hdc, btn.x - lineW / 2, btn.y + btn.height + lineW / 2);
+	LineTo(hdc, btn.x - lineW / 2, btn.y - lineW / 2);
+}
+
+void drawDisableButton(HDC hdc, struct Button btn) {
+	RECT rect = { btn.x, btn.y, btn.x + btn.width, btn.y + btn.height };
+
+	HBRUSH disableBrush = CreateSolidBrush(RGB(140, 140, 140));
+
+	FillRect(hdc, &rect, disableBrush);
+	SetBkColor(hdc, RGB(140, 140, 140));
+
+	DrawText(hdc, btn.text, -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+
+	DeleteObject(disableBrush);
+}
+
+void pauseBtnClick(int btnValue) {
 	changeState(1);
 }
 
-void continueBtnClick() {
+void continueBtnClick(int btnValue) {
 	changeState(0);
 }
 
-void restartBtnClick() {
-	initField(0, 50, 280, 400);
+void restartBtnClick(int btnValue) {
+	restartGame();
 }
 
-void settingsBtnClick() {
+void settingsBtnClick(int btnValue) {
 	changeState(2);
+}
+
+void changeCollsCountBtnClick(int btnValue) {
+	changeCollsCountSetting(btnValue);
+}
+
+void changeThemeBtnClick(int btnValue) {
+	changeThemeSetting(btnValue);
+}
+
+void appLyButtonClick() {
+	if (!wasSettingsChanges()) return;
+
+	if (applyChanges()) changeState(3);
+}
+
+void settingsMessageBtnClick() {
+	changeState(2);
+}
+
+void backButtonClick() {
+	changeState(1);
 }

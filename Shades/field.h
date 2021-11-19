@@ -1,4 +1,5 @@
 #pragma once
+#include "blockColor.h"
 #include "framework.h"
 
 void initField(int x, int y, int width, int height);
@@ -8,5 +9,7 @@ void changeColl(int vector, HWND hWnd);
 void BlockAnimationsTick();
 void increaseSpeed();
 int getPoints();
+void changeFieldTheme(int newTheme);
+struct BlockColor getColorFromThemes(int i, int j);
 
 struct Field;

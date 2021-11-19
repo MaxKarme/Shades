@@ -9,21 +9,26 @@ void initMenu(int x, int y, int width, int height) {
 	menu.width = width;
 	menu.height = height;
 
-	initField(x, y + 50, width, height - 50);
+	initField(menu.x, menu.y + 50, menu.width, menu.height - 50);
 
 	menu.state = 0;
-	menu.length = 3;
+	menu.length = 4;
 
 	menu.panels = (struct Panel*)malloc(sizeof(struct Panel) * menu.length);
 
 	getTopPanel(menu, 0);
 	getPausePanel(menu, 1);
 	getSettingsPanel(menu, 2);
+	getSettingsMessagePanel(menu, 3);
+}
+
+void restartGame() {
+	initField(menu.x, menu.y + 50, menu.width, menu.height - 50);
 }
 
 void drawMenu(HDC hdc) {
 	for (int i = 0; i < menu.length; ++i) {
-		menu.panels[i].draw(hdc, menu, menu.panels[i]);
+		menu.panels[i].draw(hdc, &menu, &menu.panels[i]);
 	}
 }
 
@@ -44,6 +49,7 @@ int MenuOnMouseMove(int x, int y) {
 	int needInvalidate = 0;
 
 	for (int i = 0; i < menu.length; ++i) {
+		if(!menu.panels[i].isActive) continue;
 		for (int j = 0; j < menu.panels[i].length; ++j) {
 			struct Button btn = menu.panels[i].btns[j];
 
@@ -62,6 +68,7 @@ int MenuOnMouseDown(int x, int y) {
 	int needInvalidate = 0;
 
 	for (int i = 0; i < menu.length; ++i) {
+		if(!menu.panels[i].isActive) continue;
 		for (int j = 0; j < menu.panels[i].length; ++j) {
 			struct Button btn = menu.panels[i].btns[j];
 
@@ -77,11 +84,12 @@ int MenuOnMouseDown(int x, int y) {
 
 int MenuOnMouseUp() {
 	for (int i = 0; i < menu.length; ++i) {
+		if (!menu.panels[i].isActive) continue;
 		for (int j = 0; j < menu.panels[i].length; ++j) {
 			struct Button btn = menu.panels[i].btns[j];
 			if (!btn.mouseDown) continue;
 
-			menu.panels[i].btns[j].onclick();
+			menu.panels[i].btns[j].onclick(menu.panels[i].btns[j].value);
 			menu.panels[i].btns[j].mouseDown = 0;
 
 			return 1;

@@ -5,6 +5,7 @@
 #include "Shades.h"
 #include "field.h"
 #include "Menu.h"
+#include "settings.h"
 
 #define MAX_LOADSTRING 100
 
@@ -28,7 +29,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Разместите код здесь.
-
+    initSettings();
+    initMenu(0, 0, 280, 450);
     // Инициализация глобальных строк
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_SHADES, szWindowClass, MAX_LOADSTRING);
@@ -107,7 +109,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   initMenu(0, 0, 280, 450);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 

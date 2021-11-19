@@ -39,6 +39,12 @@
     <ClInclude Include="Button.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="settings.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="blockColor.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Shades.rc">
@@ -69,9 +75,18 @@
     <ClCompile Include="Button.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="settings.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="blockColor.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="log.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="settings.txt">
       <Filter>Файлы ресурсов</Filter>
     </Text>
   </ItemGroup>

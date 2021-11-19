@@ -139,20 +139,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="blockColor.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="Panel.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="settings.h" />
     <ClInclude Include="Shades.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="blockColor.c" />
     <ClCompile Include="Button.c" />
     <ClCompile Include="field.c" />
     <ClCompile Include="Menu.c" />
     <ClCompile Include="Panel.c" />
+    <ClCompile Include="settings.c" />
     <ClCompile Include="Shades.c" />
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="log.txt" />
+    <Text Include="settings.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
