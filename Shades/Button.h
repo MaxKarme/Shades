@@ -26,3 +26,4 @@ void changeThemeBtnClick(int btnValue);
 void appLyButtonClick();
 void backButtonClick();
 void settingsMessageBtnClick();
+void fameHallClick();

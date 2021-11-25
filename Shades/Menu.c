@@ -9,10 +9,11 @@ void initMenu(int x, int y, int width, int height) {
 	menu.width = width;
 	menu.height = height;
 
-	initField(menu.x, menu.y + 50, menu.width, menu.height - 50);
 
 	menu.state = 0;
-	menu.length = 4;
+	menu.length = 6;
+
+	initField(menu.x, menu.y + 50, menu.width, menu.height - 50);
 
 	menu.panels = (struct Panel*)malloc(sizeof(struct Panel) * menu.length);
 
@@ -20,10 +21,12 @@ void initMenu(int x, int y, int width, int height) {
 	getPausePanel(menu, 1);
 	getSettingsPanel(menu, 2);
 	getSettingsMessagePanel(menu, 3);
+	getGameOverPanel(menu, 4);
+	getFameHallPanel(menu, 5);
 }
 
 void restartGame() {
-	initField(menu.x, menu.y + 50, menu.width, menu.height - 50);
+	restartField(menu.width, menu.height - 50);
 }
 
 void drawMenu(HDC hdc) {

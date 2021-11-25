@@ -144,7 +144,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_TIMER:
         if(getMenuState() == 0) moveCurrent();
         BlockAnimationsTick();
-        if(getMenuState() == 0) InvalidateRect(hWnd, NULL, TRUE);
+        if(getMenuState() == 0 || getMenuState() == 4) InvalidateRect(hWnd, NULL, TRUE);
         break;
     case WM_KEYDOWN:
         switch (wParam) 
@@ -176,6 +176,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+    case WM_CLOSE:
+        saveField();
+        DestroyWindow(hWnd);
+        break;
+
     case WM_PAINT:
         {
             PAINTSTRUCT ps;

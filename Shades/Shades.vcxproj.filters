@@ -89,5 +89,11 @@
     <Text Include="settings.txt">
       <Filter>Файлы ресурсов</Filter>
     </Text>
+    <Text Include="map.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="records.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
   </ItemGroup>
 </Project>

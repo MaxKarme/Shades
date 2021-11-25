@@ -14,6 +14,7 @@ struct Field {
 	struct ActiveBlock current;
 	int animationsCount;
 	int points;
+	int recordPosition;
 };
 
 struct ColorAnimation {
@@ -48,26 +49,69 @@ struct BlockColor getColorFromThemes(int i, int j) {
 	return themes[i][j];
 }
 
+void checkGameOver(int coll);
+
 void initField(int x, int y, int width, int height) {
 	srand(time(NULL));
 
-	field.animationsCount = 0;
-	field.points = 0;
 
 	field.x = x;
 	field.y = y;
 
+	FILE* file;
+	fopen_s(&file, "map.txt", "rt");
+	if (!file) return;
+
 	field.rows = 10;
-	field.colls = getCollsCount();
+	fscanf_s(file, "%d", &field.colls);
+
+	map = (int**)malloc(field.rows * sizeof(int*));
+
+	for (int i = 0; i < field.rows; ++i) {
+		map[i] = (int*)malloc(field.colls * sizeof(int));
+		for (int j = 0; j < field.colls; ++j) fscanf_s(file, "%d", &map[i][j]);
+	}
+
+	fscanf_s(file, "%d", &field.points);
+	fscanf_s(file, "%d", &field.recordPosition);
+
+	fscanf_s(file, "%d", &field.current.y);
+	fscanf_s(file, "%d", &field.current.coll);
+	fscanf_s(file, "%d", &field.current.type);
+
+	field.animationsCount = 0;
+
 	field.sizeX = width / field.colls;
 	field.sizeY = height / field.rows;
 	field.currentTheme = getTheme();
+
+	field.current.speed = 8;
+
+	field.current.currentLineTop = getCollTop(0);
+
+	for (int i = 0; i < field.colls; ++i) {
+		checkGameOver(i);
+	}
+
+	fclose(file);
+}
+
+void restartField(int width, int height) {
+	field.animationsCount = 0;
+	field.points = 0;
+	field.recordPosition = -1;
+
+	field.rows = 10;
+	field.colls = getCollsCount();
+	field.currentTheme = getTheme();
+
+	field.sizeX = width / field.colls;
+	field.sizeY = height / field.rows;
 
 	field.current.coll = 0;
 	field.current.y = 0;
 	field.current.type = rand() % 4 + 1;
 	field.current.speed = 8;
-	field.current.currentLineTop = 0;
 
 	map = (int**)malloc(field.rows * sizeof(int*));
 
@@ -75,10 +119,12 @@ void initField(int x, int y, int width, int height) {
 		map[i] = (int*)malloc(field.colls * sizeof(int));
 		for (int j = 0; j < field.colls; ++j) map[i][j] = 0;
 	}
+
+	field.current.currentLineTop = getCollTop(0);
 }
 
 int getPoints() { return field.points; };
-
+int getRecordPosition() { return field.recordPosition; };
 
 
 int printMap() {
@@ -200,6 +246,8 @@ void mergeColl(int coll, int row) {
 
 	while (map[row][coll] == map[row - 1][coll]) {
 		if (map[row][coll] == 5) return;
+
+		field.points++;
 
 		int id = getId();
 		struct BlockColor currentColor = themes[field.currentTheme][map[row][coll]];
@@ -337,6 +385,65 @@ void addCurrentInMap() {
 	map[field.rows - 1][field.current.coll] = field.current.type;
 }
 
+void checkGameOver(int coll) {
+	if (map[0][coll] == 0) return;
+	if (field.recordPosition != -1) {
+		changeState(4);
+		return;
+	}
+
+	FILE* file;
+	fopen_s(&file, "records.txt", "rt");
+
+	if (file == NULL) return;
+
+	int length;
+	fscanf_s(file, "%d", &length);
+
+	length >>= 4; // расшифровка
+	length -= 3; // расшифровка
+
+	int* arr = (int*)malloc(sizeof(int) * (length + 1));
+
+	int current;
+
+	for (int i = 0; i < length; ++i) {
+		fscanf_s(file, "%d", &current);
+		current >>= 4; // расшифровка
+		current -= 3; // расшифровка
+
+		if (field.points > current && field.recordPosition == -1) {
+			arr[i] = field.points;
+			field.recordPosition = ++i;
+		}
+
+		arr[i] = current;
+	}
+
+	if (field.recordPosition == -1) {
+		arr[length] = field.points;
+		field.recordPosition = length + 1;
+	}
+
+	fclose(file);
+
+	file = fopen("records.txt", "wt");
+	if (file == NULL) return;
+
+	if (length > 9) length = 9;
+	length++;
+
+	fprintf_s(file, "%d ", ((length + 3) << 4)); // шифровка
+
+	for (int i = 0; i < length; ++i) {
+		fprintf_s(file, "%d ", ((arr[i] + 3) << 4)); // шифровка
+	}
+
+	fclose(file);
+
+	changeState(4);
+}
+
 void moveCurrent() {
 	int topCoords = field.rows * field.sizeY - field.current.currentLineTop * field.sizeY;
 	if (field.animationsCount) return;
@@ -344,6 +451,7 @@ void moveCurrent() {
 		addCurrentInMap();
 		mergeColl(field.current.coll, field.rows - field.current.currentLineTop - 1);
 		checkLines();
+		checkGameOver(field.current.coll);
 
 		field.current.coll = 0;
 		field.current.y = 0;
@@ -409,4 +517,30 @@ void drawField(HDC hdc) {
 
 void changeFieldTheme(int newTheme) {
 	field.currentTheme = newTheme;
+}
+
+void saveField() {
+	FILE* file;
+	fopen_s(&file, "map.txt", "wt");
+
+	if (!file) return;
+
+	fprintf(file, "%d\n", field.colls);
+
+	for (int i = 0; i < field.rows; ++i) {
+		for (int j = 0; j < field.colls; ++j) {
+			fprintf_s(file, "%d ", map[i][j]);
+		}
+		fprintf(file, "\n");
+	}
+
+	fprintf(file, "%d ", field.points);
+	fprintf(file, "%d\n", field.recordPosition);
+
+	fprintf(file, "%d ", field.current.y);
+	fprintf(file, "%d ", field.current.coll);
+	fprintf(file, "%d", field.current.type);
+
+
+	fclose(file);
 }

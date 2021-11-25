@@ -18,3 +18,5 @@ void getTopPanel(struct Menu menu, int index);
 void getPausePanel(struct Menu menu, int index);
 void getSettingsPanel(struct Menu menu, int index);
 void getSettingsMessagePanel(struct Menu menu, int index);
+void getGameOverPanel(struct Menu menu, int index);
+void getFameHallPanel(struct Menu menu, int index);

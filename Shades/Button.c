@@ -56,7 +56,9 @@ void drawDisableButton(HDC hdc, struct Button btn) {
 	DeleteObject(disableBrush);
 }
 
+
 void pauseBtnClick(int btnValue) {
+	if (getMenuState() == 4) return;
 	changeState(1);
 }
 
@@ -66,6 +68,7 @@ void continueBtnClick(int btnValue) {
 
 void restartBtnClick(int btnValue) {
 	restartGame();
+	if (getMenuState() == 4) changeState(1);
 }
 
 void settingsBtnClick(int btnValue) {
@@ -92,4 +95,8 @@ void settingsMessageBtnClick() {
 
 void backButtonClick() {
 	changeState(1);
+}
+
+void fameHallClick() {
+	changeState(5);
 }

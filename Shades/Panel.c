@@ -164,6 +164,103 @@ void drawSettingsPanel(HDC hdc, struct Menu* menu, struct Panel* panel) {
 };
 
 
+void drawGameOverPanel(HDC hdc, struct Menu* menu, struct Panel* panel) {
+	if (menu->state != 4) {
+		panel->isActive = 0;
+		return;
+	}
+
+	panel->isActive = 1;
+
+	HBRUSH hBrush = CreateSolidBrush(RGB(240, 83, 83));
+	RECT rect = { panel->x, panel->y, panel->x + panel->width, panel->y + panel->height };
+
+	FillRect(hdc, &rect, hBrush);
+
+	drawButton(hdc, panel->btns[0]);
+
+	rect.top += 20;
+
+	wchar_t points[50];
+	int length = swprintf(&points, 50, L"Your points count: %d", getPoints());
+
+	SetBkMode(hdc, TRANSPARENT);
+	DrawText(hdc, points, length, &rect, DT_SINGLELINE | DT_CENTER);
+
+	rect.top += 30;
+
+	wchar_t recordPosText[40];
+	int recordPos = getRecordPosition();
+
+	if (recordPos == -1) {
+		length = swprintf(&recordPosText, 50, L"Your record position: -");
+	}
+	else {
+		length = swprintf(&recordPosText, 50, L"Your record position: %3d", recordPos);
+	}
+
+	SetBkMode(hdc, TRANSPARENT);
+	DrawText(hdc, recordPosText, length, &rect, DT_SINGLELINE | DT_CENTER);
+}
+
+
+void drawRecords(HDC hdc, RECT rect) {
+	FILE* file;
+	fopen_s(&file, "records.txt", "rt");
+
+	if (file == NULL) return;
+
+	int length;
+	fscanf_s(file, "%d", &length);
+
+	length >>= 4; // расшифровка
+	length -= 3; // расшифровка
+
+	rect.top += 20;
+
+	DrawText(hdc, L"Hall Of Fame", -1, &rect, DT_CENTER);
+
+	rect.top += 50;
+	rect.left += 20;
+
+	int buffer[20];
+	int current;
+
+	for (int i = 0; i < length; ++i) {
+		fscanf_s(file, "%d", &current);
+		current >>= 4; // расшифровка
+		current -= 3; // расшифровка 
+
+		int length = swprintf(buffer, 20, L"%2d. %d", i + 1, current);
+
+		DrawText(hdc, buffer, length, &rect, 0);
+
+		rect.top += 20;
+	}
+
+	fclose(file);
+}
+
+void drawFameHallPanel(HDC hdc, struct Menu* menu, struct Panel* panel) {
+	if (menu->state != 5) {
+		panel->isActive = 0;
+		return;
+	}
+
+	panel->isActive = 1;
+
+	HBRUSH hBrush = CreateSolidBrush(RGB(239, 239, 80));
+	RECT rect = { panel->x, panel->y, panel->x + panel->width, panel->y + panel->height };
+
+	FillRect(hdc, &rect, hBrush);
+
+	drawButton(hdc, panel->btns[0]);
+
+	drawRecords(hdc, rect);
+}
+
+
+
 void getTopPanel(struct Menu menu, int index) {
 	menu.panels[index].width = menu.width;
 	menu.panels[index].height = 50;
@@ -196,12 +293,12 @@ void getPausePanel(struct Menu menu, int index) {
 	menu.panels[index].x = (menu.width - 150) / 2 + menu.x;
 	menu.panels[index].y = (menu.height - 300) / 2 + menu.y;
 
-	menu.panels[index].length = 3;
-	menu.panels[index].btns = (struct Button*)malloc(sizeof(struct Button) * 3);
+	menu.panels[index].length = 4;
+	menu.panels[index].btns = (struct Button*)malloc(sizeof(struct Button) * 4);
 
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < 4; ++i) {
 		menu.panels[index].btns[i].x = menu.panels[index].x + 25;
-		menu.panels[index].btns[i].y = menu.panels[index].y + 70 + 60 * i;
+		menu.panels[index].btns[i].y = menu.panels[index].y + 40 + 60 * i;
 		menu.panels[index].btns[i].width = 100;
 		menu.panels[index].btns[i].height = 40;
 
@@ -216,8 +313,11 @@ void getPausePanel(struct Menu menu, int index) {
 	menu.panels[index].btns[1].text = L"Restart";
 	menu.panels[index].btns[1].onclick = &restartBtnClick;
 
-	menu.panels[index].btns[2].text = L"Settings";
-	menu.panels[index].btns[2].onclick = &settingsBtnClick;
+	menu.panels[index].btns[2].text = L"Hall of fame";
+	menu.panels[index].btns[2].onclick = &fameHallClick;
+
+	menu.panels[index].btns[3].text = L"Settings";
+	menu.panels[index].btns[3].onclick = &settingsBtnClick;
 
 	menu.panels[index].draw = &drawPausePanel;
 
@@ -334,5 +434,59 @@ void getSettingsMessagePanel(struct Menu menu, int index) {
 	menu.panels[index].draw = &drawSettingsMessagePanel;
 
 	if (menu.state == 3) menu.panels[index].isActive = 1;
+	else menu.panels[index].isActive = 0;
+}
+
+void getGameOverPanel(struct Menu menu, int index) {
+	menu.panels[index].width = 200;
+	menu.panels[index].height = 150;
+	menu.panels[index].x = menu.x + (menu.width - 200) / 2;
+	menu.panels[index].y = menu.y + (menu.height - 150) / 2;
+
+	menu.panels[index].length = 1;
+	menu.panels[index].btns = (struct Button*)malloc(sizeof(struct Button) * 1);
+
+	menu.panels[index].btns[0].width = 60;
+	menu.panels[index].btns[0].height = 30;
+	menu.panels[index].btns[0].x = menu.panels[index].x + 70;
+	menu.panels[index].btns[0].y = menu.panels[index].y + 105;
+
+	menu.panels[index].btns[0].text = L"Restart";
+	menu.panels[index].btns[0].isVisible = 1;
+	menu.panels[index].btns[0].hovered = 0;
+	menu.panels[index].btns[0].mouseDown = 0;
+
+	menu.panels[index].btns[0].onclick = &restartBtnClick;
+
+	menu.panels[index].draw = &drawGameOverPanel;
+
+	if (menu.state == 4) menu.panels[index].isActive = 1;
+	else menu.panels[index].isActive = 0;
+}
+
+void getFameHallPanel(struct Menu menu, int index) {
+	menu.panels[index].width = 200;
+	menu.panels[index].height = 330;
+	menu.panels[index].x = menu.x + (menu.width - 200) / 2;
+	menu.panels[index].y = menu.y + (menu.height - 330) / 2;
+
+	menu.panels[index].length = 1;
+	menu.panels[index].btns = (struct Button*)malloc(sizeof(struct Button) * 1);
+
+	menu.panels[index].btns[0].width = 60;
+	menu.panels[index].btns[0].height = 30;
+	menu.panels[index].btns[0].x = menu.panels[index].x + 70;
+	menu.panels[index].btns[0].y = menu.panels[index].y + 285;
+
+	menu.panels[index].btns[0].text = L"Back";
+	menu.panels[index].btns[0].isVisible = 1;
+	menu.panels[index].btns[0].hovered = 0;
+	menu.panels[index].btns[0].mouseDown = 0;
+
+	menu.panels[index].btns[0].onclick = &backButtonClick;
+
+	menu.panels[index].draw = &drawFameHallPanel;
+
+	if (menu.state == 4) menu.panels[index].isActive = 1;
 	else menu.panels[index].isActive = 0;
 }

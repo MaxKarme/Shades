@@ -8,8 +8,10 @@ void moveCurrent();
 void changeColl(int vector, HWND hWnd);
 void BlockAnimationsTick();
 void increaseSpeed();
-int getPoints();
 void changeFieldTheme(int newTheme);
 struct BlockColor getColorFromThemes(int i, int j);
+void saveField();
+void restartField(int width, int height);
 
-struct Field;
+int getPoints();
+int getRecordPosition();
