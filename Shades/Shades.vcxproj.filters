@@ -45,6 +45,9 @@
     <ClInclude Include="blockColor.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="animation.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Shades.rc">
@@ -81,6 +84,9 @@
     <ClCompile Include="blockColor.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="animation.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="log.txt">
@@ -93,6 +99,15 @@
       <Filter>Файлы ресурсов</Filter>
     </Text>
     <Text Include="records.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="test1.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="test2.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="test3.txt">
       <Filter>Файлы ресурсов</Filter>
     </Text>
   </ItemGroup>

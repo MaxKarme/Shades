@@ -16,6 +16,7 @@ struct Button {
 void drawBorder(HDC hdc, struct Button btn, COLORREF color);
 void drawButton(HDC hdc, struct Button btn);
 void drawDisableButton(HDC hdc, struct Button btn);
+void drawThemeBtn(HDC hdc, struct Button btn, int theme);
 
 void pauseBtnClick();
 void continueBtnClick();

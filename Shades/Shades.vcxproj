@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="animation.h" />
     <ClInclude Include="blockColor.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="framework.h" />
@@ -151,6 +152,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="animation.c" />
     <ClCompile Include="blockColor.c" />
     <ClCompile Include="Button.c" />
     <ClCompile Include="field.c" />
@@ -171,6 +173,9 @@
     <Text Include="map.txt" />
     <Text Include="records.txt" />
     <Text Include="settings.txt" />
+    <Text Include="test1.txt" />
+    <Text Include="test2.txt" />
+    <Text Include="test3.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

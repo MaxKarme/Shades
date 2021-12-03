@@ -5,6 +5,7 @@
 #include "Shades.h"
 #include "field.h"
 #include "Menu.h"
+#include "animation.h"
 #include "settings.h"
 
 #define MAX_LOADSTRING 100
@@ -143,7 +144,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_TIMER:
         if(getMenuState() == 0) moveCurrent();
-        BlockAnimationsTick();
+        if (getMenuState() == 0) animationsTick();
         if(getMenuState() == 0 || getMenuState() == 4) InvalidateRect(hWnd, NULL, TRUE);
         break;
     case WM_KEYDOWN:

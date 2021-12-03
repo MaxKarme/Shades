@@ -2,10 +2,13 @@
 #include <stdio.h>
 #include <conio.h>
 #include <time.h>
+#include "animation.h"
 
 
 struct ActiveBlock {
-	int coll, y, type, speed, currentLineTop;
+	int coll, y, type;
+	int speed, baseSpeed;
+	int currentLineTop;
 };
 
 struct Field {
@@ -17,24 +20,16 @@ struct Field {
 	int recordPosition;
 };
 
-struct ColorAnimation {
-	struct BlockColor current, delta;
-	int steps;
-	int isActive;
-};
-
 struct BlockAnimation {
-	int width, height;
-	int x, y;
-	int id, nextId;
+	RECT coords;
 	int isVisible;
 	int deletedLine;
 	int checkEmptyColl;
-	struct ColorAnimation a;
+	int animationId;
 };
 
 
-struct BlockAnimation animations[10];
+struct BlockAnimation fieldAnimations[10];
 
 struct BlockColor themes[3][6] = {
 	{{100, 100, 100}, {252, 254, 217}, {249, 241, 133}, {255, 146, 3}, {197, 66, 1}, {114, 11, 2}},
@@ -59,7 +54,7 @@ void initField(int x, int y, int width, int height) {
 	field.y = y;
 
 	FILE* file;
-	fopen_s(&file, "map.txt", "rt");
+	fopen_s(&file, "test1.txt", "rt");
 	if (!file) return;
 
 	field.rows = 10;
@@ -85,7 +80,8 @@ void initField(int x, int y, int width, int height) {
 	field.sizeY = height / field.rows;
 	field.currentTheme = getTheme();
 
-	field.current.speed = 8;
+	field.current.baseSpeed = height / 50;
+	field.current.speed = height / 50;
 
 	field.current.currentLineTop = getCollTop(0);
 
@@ -111,42 +107,32 @@ void restartField(int width, int height) {
 	field.current.coll = 0;
 	field.current.y = 0;
 	field.current.type = rand() % 4 + 1;
-	field.current.speed = 8;
+	field.current.baseSpeed = height / 50;
+	field.current.speed = height / 50;
 
-	map = (int**)malloc(field.rows * sizeof(int*));
+	map = (int**)realloc(map, field.rows * sizeof(int*));
 
 	for (int i = 0; i < field.rows; ++i) {
-		map[i] = (int*)malloc(field.colls * sizeof(int));
+		map[i] = (int*)realloc(map[i], field.colls * sizeof(int));
 		for (int j = 0; j < field.colls; ++j) map[i][j] = 0;
 	}
 
 	field.current.currentLineTop = getCollTop(0);
 }
 
+
+
 int getPoints() { return field.points; };
 int getRecordPosition() { return field.recordPosition; };
 
 
-int printMap() {
-	FILE* file = fopen("log.txt", "wt");
-
-	for (int i = 0; i < field.rows; ++i) {
-		for (int j = 0; j < field.colls; ++j) fprintf(file, "%d ", map[i][j]);
-		fprintf(file, "\n");
-	}
-
-	fclose(file);
-}
-
-int getId() {
-	static int id = 1;
-	return id++;
-}
 
 void increaseSpeed() {
-	if (field.current.speed > 8) return;
+	if (field.current.speed > field.current.baseSpeed) return;
 	field.current.speed *= 2;
 }
+
+
 
 void mergeColl(int coll, int row);
 void checkLines();
@@ -196,48 +182,7 @@ void checkEmptyInColl(int coll) {
 	deleteEmpty(coll, emptyIndex, emptyHeight);
 }
 
-void BlockAnimationsTick() {
-	for (int i = 0; i < field.animationsCount; ++i) {
-		if (!animations[i].a.isActive) continue;
-		animations[i].a.current.r += animations[i].a.delta.r;
-		animations[i].a.current.g += animations[i].a.delta.g;
-		animations[i].a.current.b += animations[i].a.delta.b;
 
-		animations[i].a.steps--;
-
-		if (animations[i].a.steps) continue;
-
-		int nextId = animations[i].nextId;
-		if (animations[i].deletedLine != -1) deleteLine(animations[i].deletedLine);
-		if (animations[i].checkEmptyColl != -1) checkEmptyInColl(animations[i].checkEmptyColl);
-
-		for (int j = i + 1; j < field.animationsCount; ++j) {
-			if (animations[j].id == nextId) {
-				animations[j].a.isActive = 1;
-				animations[j].isVisible = 1;
-				nextId = 0;
-			}
-			animations[j - 1] = animations[j];
-		}
-
-		i--;
-		field.animationsCount--;
-
-		if (!nextId) continue;
-
-		for (int j = 0; nextId && j < field.animationsCount; ++j) {
-			if (animations[j].id == nextId) {
-				animations[j].a.isActive = 1;
-				nextId = 0;
-			}
-		}
-	}
-}
-
-struct BlockColor getDelta(struct BlockColor from, struct BlockColor to, int steps) {
-	struct BlockColor res = { (to.r - from.r) / steps, (to.g - from.g) / steps, (to.b - from.b) / steps };
-	return res;
-}
 
 void mergeColl(int coll, int row) {
 	row++;
@@ -249,49 +194,60 @@ void mergeColl(int coll, int row) {
 
 		field.points++;
 
-		int id = getId();
 		struct BlockColor currentColor = themes[field.currentTheme][map[row][coll]];
 
-		struct BlockAnimation disappearA = {
-												field.sizeX, field.sizeY,						// width, heigth
-												coll * field.sizeX, (row - 1) * field.sizeY,	// x, y
-												id, 0, isFirstAnimation, -1, -1				// id nextId, isVisible, deletedLine, checkEmptyColl
-											};
+		RECT coords = { coll * field.sizeX + field.x, (row - 1) * field.sizeY + field.y, 0, 0 };
 
-		struct ColorAnimation disappearColor = { currentColor, getDelta(currentColor, themes[field.currentTheme][0], 6), 6, isFirstAnimation}; // currentColor deltaColor steps isActive
+		coords.right = coords.left + field.sizeX;
+		coords.bottom = coords.top + field.sizeY;
 
-		disappearA.a = disappearColor;
+		struct BlockAnimation disappearBlock = { coords, isFirstAnimation, -1, -1 }; // coords, isVisible, deletedLine, checkEmptyInColl
 
-		if (!isFirstAnimation) {
-			animations[field.animationsCount - 2].nextId = id;
+		struct Animation disappearAnimation;
+		initAnimation(&disappearAnimation);
+
+		disappearAnimation.color = currentColor;
+		disappearAnimation.coords = coords;
+		disappearAnimation.id = getId();
+		disappearAnimation.steps = 10;
+		disappearAnimation.isActive = isFirstAnimation;
+		disappearAnimation.delta.color = getDeltaColor(currentColor, themes[field.currentTheme][0], 10);
+
+		disappearBlock.animationId = disappearAnimation.id;
+
+		fieldAnimations[field.animationsCount++] = disappearBlock;
+
+		if (field.animationsCount) {
+			performAfter(disappearAnimation, fieldAnimations[field.animationsCount - 2].animationId);
 		}
+		else performNow(disappearAnimation);
 
-		field.animationsCount++;
-		animations[field.animationsCount - 1] = disappearA;
-
-		id = getId();
 		struct BlockColor endColor = themes[field.currentTheme][map[row][coll] + 1];
+		coords.top += field.sizeY;
+		coords.bottom += field.sizeY;
 
-		struct BlockAnimation increaseA = {
-											field.sizeX, field.sizeY,					// width, heigth
-											coll * field.sizeX, row * field.sizeY,	// x, y
-											id, 0, 1, -1, -1						// id nextId, isVisible, deletedLine, checkEmptyColl
-										};
+		struct BlockAnimation increaseBlock = { coords, 1, -1, -1 }; // coords, isVisible, deletedLine, checkEmptyInColl
 
-		struct ColorAnimation increaseColor = { currentColor, getDelta(currentColor, endColor, 6), 6, isFirstAnimation }; // currentColor deltaColor steps isActive
+		struct Animation increaseAnimation;
+		initAnimation(&increaseAnimation);
 
-		increaseA.a = increaseColor;
+		increaseAnimation.color = currentColor;
+		increaseAnimation.coords = coords;
+		increaseAnimation.id = getId();
+		increaseAnimation.steps = 10;
+		increaseAnimation.isActive = isFirstAnimation;
+		increaseAnimation.delta.color = getDeltaColor(currentColor, endColor, 10);
 
+		increaseBlock.animationId = increaseAnimation.id;
 
-		if (!isFirstAnimation) {
-			animations[field.animationsCount - 2].nextId = id;
-		}
+		fieldAnimations[field.animationsCount++] = increaseBlock;
 
-		field.animationsCount++;
-		animations[field.animationsCount - 1] = increaseA;
+		performParallelWith(increaseAnimation, fieldAnimations[field.animationsCount - 2].animationId);
+
 
 		map[row - 1][coll] = 0;
 		map[row][coll] += 1;
+
 
 		row++;
 		isFirstAnimation = 0;
@@ -303,7 +259,7 @@ void mergeColl(int coll, int row) {
 
 	if (isFirstAnimation) return; // нет слияний
 
-	animations[field.animationsCount - 1].checkEmptyColl = coll;
+	fieldAnimations[field.animationsCount - 1].checkEmptyColl = coll;
 }
 
 void checkLines() {
@@ -334,24 +290,40 @@ void checkLines() {
 
 	if (!check) return;
 
-	int id = getId();
 	field.points += 5 * map[deletedLine][0];
 
-	struct BlockAnimation disappearLine = {
-										field.sizeX * field.colls, field.sizeY,			// width, heigth
-										0, deletedLine * field.sizeY,					// x, y
-										id, 0, !field.animationsCount, deletedLine, -1	// id nextId, isVisible, deletedLine, checkEmptyColl
-	};
-
 	struct BlockColor currentColor = themes[field.currentTheme][map[deletedLine][0]];
-	struct ColorAnimation disappearColor = { currentColor, getDelta(currentColor, themes[field.currentTheme][0], 6), 6, !field.animationsCount }; // currentColor deltaColor steps isActive
 
-	disappearLine.a = disappearColor;
-	if(field.animationsCount) animations[field.animationsCount - 1].nextId = id;
+	RECT coords = { field.x, deletedLine * field.sizeY + field.y, 0, 0 };
 
-	field.animationsCount++;
-	animations[field.animationsCount - 1] = disappearLine;
+	coords.right = coords.left + field.sizeX * field.colls;
+	coords.bottom = coords.top + field.sizeY;
+
+	struct BlockAnimation disappearLine = { coords, !field.animationsCount, deletedLine, -1 }; // coords, isVisible, deletedLine, checkEmptyInColl
+
+	struct Animation disappearAnimation;
+	initAnimation(&disappearAnimation);
+
+	disappearAnimation.color = currentColor;
+	disappearAnimation.coords = coords;
+	disappearAnimation.id = getId();
+	disappearAnimation.steps = 10;
+	disappearAnimation.isActive = !field.animationsCount;
+	disappearAnimation.delta.color = getDeltaColor(currentColor, themes[field.currentTheme][0], 10);
+
+	disappearLine.animationId = disappearAnimation.id;
+
+	fieldAnimations[field.animationsCount++] = disappearLine;
+
+	if (field.animationsCount > 1) {
+		performAfter(disappearAnimation, fieldAnimations[field.animationsCount - 2].animationId);
+	}
+	else performNow(disappearAnimation);
+
+	
 }
+
+
 
 int getCollTop(int index) {
 	for (int i = 0; i < field.rows; ++i) {
@@ -373,6 +345,8 @@ void changeColl(int vector, HWND hWnd) {
 	field.current.coll = newColl;
 	field.current.currentLineTop = getCollTop(field.current.coll);
 }
+
+
 
 void addCurrentInMap() {
 	for (int i = 1; i < field.rows; ++i) {
@@ -458,12 +432,13 @@ void moveCurrent() {
 
 		field.current.currentLineTop = getCollTop(0);
 		field.current.type = rand() % 4 + 1;
-		field.current.speed = 8;
+		field.current.speed = field.current.baseSpeed;
 
 		return;
 	}
 	field.current.y += field.current.speed;
 }
+
 
 
 void drawItem(HDC hdc, int row, int coll, int type) {
@@ -479,6 +454,18 @@ void drawItem(HDC hdc, int row, int coll, int type) {
 	DeleteObject(hBrush);
 }
 
+void doneCheck(int index) {
+	deleteAnimation(fieldAnimations[index].animationId);
+	if (fieldAnimations[index].deletedLine != -1) deleteLine(fieldAnimations[index].deletedLine);
+	if (fieldAnimations[index].checkEmptyColl != -1) checkEmptyInColl(fieldAnimations[index].checkEmptyColl);
+
+	for (int i = index; i < field.animationsCount - 1; ++i) {
+		fieldAnimations[i] = fieldAnimations[i + 1];
+	}
+
+	field.animationsCount--;
+}
+
 void drawField(HDC hdc) {
 	for (int i = 0; i < field.rows; ++i) {
 		for (int j = 0; j < field.colls; ++j) {
@@ -492,24 +479,29 @@ void drawField(HDC hdc) {
 
 	RECT coords = { 
 					field.current.coll * field.sizeX + field.x,	field.current.y + field.y, 
-					field.current.coll * field.sizeX + field.sizeX, field.current.y + field.sizeY + field.y
+					field.current.coll * field.sizeX + field.sizeX + field.x, field.current.y + field.sizeY + field.y
 				};
 
 	if(!field.animationsCount) FillRect(hdc, &coords, hBrush);
 	DeleteObject(hBrush);
 
 	for (int i = 0; i < field.animationsCount; ++i) {
-		if (!animations[i].isVisible) continue;
 
-		hBrush = CreateSolidBrush(RGB(animations[i].a.current.r, animations[i].a.current.g, animations[i].a.current.b));
+		if (!fieldAnimations[i].isVisible && !isActive(fieldAnimations[i].animationId)) continue;
+
+
+		hBrush = CreateSolidBrush(getColorByAnimationId(fieldAnimations[i].animationId));
 		SelectObject(hdc, hBrush);
 
-		RECT BlockCoords = {
-							animations[i].x + field.x, animations[i].y + field.y, 
-							animations[i].x + animations[i].width + field.x, animations[i].y + animations[i].height + field.y
-						};
+		RECT BlockCoords = getCoordsByAnimationId(fieldAnimations[i].animationId);
 
 		FillRect(hdc, &BlockCoords, hBrush);
+
+		if (isDone(fieldAnimations[i].animationId)) {
+			doneCheck(i);
+			i--;
+			continue;
+		}
 
 		DeleteObject(hBrush);
 	}

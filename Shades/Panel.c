@@ -69,54 +69,6 @@ void drawSettingsMessagePanel(HDC hdc, struct Menu* menu, struct Panel* panel) {
 }
 
 
-void drawThemeBtn(HDC hdc, struct Button btn, int theme) {
-	struct BlockColor color = getColorFromThemes(theme, 1);
-	HBRUSH hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
-
-	RECT rect = { btn.x, btn.y, btn.x + btn.width / 2, btn.y + btn.height / 2 };
-	FillRect(hdc, &rect, hBrush);
-
-	DeleteObject(hBrush);
-
-
-	color = getColorFromThemes(theme, 2);
-	hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
-
-	rect.left	= btn.x + btn.width / 2;	
-	rect.top	= btn.y;
-	rect.right	= btn.x + btn.width;		
-	rect.bottom	= btn.y + btn.height / 2;
-
-	FillRect(hdc, &rect, hBrush);
-
-	DeleteObject(hBrush);
-
-
-	color = getColorFromThemes(theme, 3);
-	hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
-
-	rect.left = btn.x;
-	rect.top = btn.y + btn.height / 2;
-	rect.right = btn.x + btn.width / 2;
-	rect.bottom = btn.y + btn.height;
-
-	FillRect(hdc, &rect, hBrush);
-
-
-	DeleteObject(hBrush);
-
-	color = getColorFromThemes(theme, 4);
-	hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
-
-	rect.left = btn.x + btn.width / 2;
-	rect.top = btn.y + btn.height / 2;
-	rect.right = btn.x + btn.width;
-	rect.bottom = btn.y + btn.height;
-
-	FillRect(hdc, &rect, hBrush);
-
-	DeleteObject(hBrush);
-}
 
 void drawSettingsBorder(HDC hdc, struct Button btn) {
 	if (getCollsCount() == btn.value || getTheme() == btn.value) drawBorder(hdc, btn, RGB(150, 80, 80));

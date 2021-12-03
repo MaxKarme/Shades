@@ -43,6 +43,55 @@ void drawBorder(HDC hdc, struct Button btn, COLORREF color) {
 	LineTo(hdc, btn.x - lineW / 2, btn.y - lineW / 2);
 }
 
+void drawThemeBtn(HDC hdc, struct Button btn, int theme) {
+	struct BlockColor color = getColorFromThemes(theme, 1);
+	HBRUSH hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
+
+	RECT rect = { btn.x, btn.y, btn.x + btn.width / 2, btn.y + btn.height / 2 };
+	FillRect(hdc, &rect, hBrush);
+
+	DeleteObject(hBrush);
+
+
+	color = getColorFromThemes(theme, 2);
+	hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
+
+	rect.left = btn.x + btn.width / 2;
+	rect.top = btn.y;
+	rect.right = btn.x + btn.width;
+	rect.bottom = btn.y + btn.height / 2;
+
+	FillRect(hdc, &rect, hBrush);
+
+	DeleteObject(hBrush);
+
+
+	color = getColorFromThemes(theme, 3);
+	hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
+
+	rect.left = btn.x;
+	rect.top = btn.y + btn.height / 2;
+	rect.right = btn.x + btn.width / 2;
+	rect.bottom = btn.y + btn.height;
+
+	FillRect(hdc, &rect, hBrush);
+
+
+	DeleteObject(hBrush);
+
+	color = getColorFromThemes(theme, 4);
+	hBrush = CreateSolidBrush(RGB(color.r, color.g, color.b));
+
+	rect.left = btn.x + btn.width / 2;
+	rect.top = btn.y + btn.height / 2;
+	rect.right = btn.x + btn.width;
+	rect.bottom = btn.y + btn.height;
+
+	FillRect(hdc, &rect, hBrush);
+
+	DeleteObject(hBrush);
+}
+
 void drawDisableButton(HDC hdc, struct Button btn) {
 	RECT rect = { btn.x, btn.y, btn.x + btn.width, btn.y + btn.height };
 
@@ -57,21 +106,21 @@ void drawDisableButton(HDC hdc, struct Button btn) {
 }
 
 
-void pauseBtnClick(int btnValue) {
+void pauseBtnClick() {
 	if (getMenuState() == 4) return;
 	changeState(1);
 }
 
-void continueBtnClick(int btnValue) {
+void continueBtnClick() {
 	changeState(0);
 }
 
-void restartBtnClick(int btnValue) {
+void restartBtnClick() {
 	restartGame();
 	if (getMenuState() == 4) changeState(1);
 }
 
-void settingsBtnClick(int btnValue) {
+void settingsBtnClick() {
 	changeState(2);
 }
 
